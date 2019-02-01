@@ -79,6 +79,7 @@ Mock.mock('/tableData', 'post', (opt)=>{
   let page = params.page || 1;
   doByTimes(() => {
     list.push(Mock.mock({
+      id : Random.natural(10000),
       address: Random.county(true),
       name: Random.cname(),
       date: Random.date()

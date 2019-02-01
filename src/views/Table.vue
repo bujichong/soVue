@@ -4,6 +4,7 @@
 .handle-input {width: 300px;display: inline-block;}
 .del-dialog-cnt{font-size: 16px;text-align: center;}
 .pagewrap{text-align: center;padding:10px 0 0;}
+.center{text-align: center;}
 </style>
 
 <template>
@@ -24,8 +25,9 @@
             <Page :total="total" show-total @on-change="changePage" @on-page-size-change="changePageSize" show-sizer />
         </div>
 
-    <Modal v-model="showEdit" title="编辑" @on-ok="updateItem('formItem')">
+    <Modal v-model="showEdit" title="编辑" footer-hide >
         <Form ref="formItem" :model="formItem" :rules="ruleItem" :label-width="80">
+            <input type="hidden" v-model="formItem.id" />
             <Row>
             <Col span="12">
                 <formItem label="姓名" prop="name">
@@ -45,6 +47,11 @@
                     </formItem>
                 </Col>
             </Row>
+            <Row>
+                <Col span="24" class="center">
+                    <Button type="primary" @click="updateItem">提交</Button> <Button @click="closeEdit">取消</Button>
+                </Col>
+            </Row>
         </Form>
     </Modal>
 
@@ -62,6 +69,7 @@
                 pageSize : 10,
                 showEdit : false,
                 formItem : {
+                    id : null,
                     name:null,
                     date:null,
                     address:null
@@ -138,17 +146,33 @@
                     this.total = res.data.total;
                 })
             },
-            updateItem(formName) {
-                this.$refs[formName].validate((valid) => {
+            updateItem() {
+                this.$refs['formItem'].validate((valid) => {
                     if (valid) {
-                        this.$http.get('/true',{params:this.formItem}).then((res) => {
-                            this.getData();
-                            this.$Message.success('Success!');
+                        this.$Modal.confirm({
+                            title :'确定提交此修改？',
+                            // content: '你确定删除此记录？',
+                            width:300,
+                            // loading: true,
+                            onOk: () => {
+                                this.$http.post('/true',{params:this.formItem}).then((res) => {
+                                    window.console&&console.log(res);
+                                    if(res.data.success){
+                                        this.showEdit = false;
+                                        this.$Message.success(res.data.msg);
+                                        this.getData();
+                                    }
+                                });
+                            }
                         });
-                    } else {
-                        this.$Message.error('Fail!');
                     }
+                    // else {
+                    //     this.$Message.error('提交失败!');
+                    // }
                 })
+            },
+            closeEdit (){
+                this.showEdit = false;
             },
             selectRow (currentRow,oldRow){
                 window.console&&console.log(currentRow);
@@ -174,7 +198,7 @@
             edit(row){
                 this.showEdit = true;
                 this.$refs['formItem'].resetFields();
-                this.formItem = row;
+                this.formItem = JSON.parse(JSON.stringify(row));
             },
             remove (index) {
                 this.$Modal.confirm({
